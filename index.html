@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a0f1e"/>
+  <meta name="description" content="On he aparcat? — Guarda la ubicació del teu cotxe"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Parking"/>
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <link rel="icon" type="image/x-icon"  href="/favicon.ico"/>
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png"/>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <title>On he aparcat?</title>
+</head>
+<body>
+
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="splash-content">
+      <div class="splash-icon">🅿️</div>
+      <h1>On he<br>aparcat?</h1>
+      <div class="loader-bar"><div class="loader-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hidden">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <div class="header-brand">
+        <span class="brand-icon">🅿️</span>
+        <span class="brand-name">Parking</span>
+      </div>
+      <div id="gps-status" class="gps-badge offline">
+        <span class="gps-dot"></span>
+        <span>GPS</span>
+      </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="app-main">
+
+      <!-- TAB: MAPA -->
+      <section id="tab-map" class="tab-content active">
+        <div class="map-wrapper">
+
+          <!-- Mapa Leaflet -->
+          <div id="leaflet-map"></div>
+
+          <!-- Panell d'accions sobre el mapa -->
+          <div class="map-actions">
+            <button class="action-btn primary" id="saveLocationBtn">
+              <span class="btn-icon">📍</span>
+              <span>Guardar aquí</span>
+            </button>
+            <button class="action-btn secondary" id="goToCarBtn" disabled>
+              <span class="btn-icon">🚗</span>
+              <span>On és el meu cotxe?</span>
+            </button>
+          </div>
+
+          <!-- Targeta de l'aparcament guardat -->
+          <div class="parking-card hidden" id="parkingCard">
+            <div class="parking-card-header">
+              <span class="parking-card-icon">🚗</span>
+              <div class="parking-card-info">
+                <h3 id="parkingCardTitle">Cotxe aparcat</h3>
+                <p id="parkingCardTime" class="parking-card-time">—</p>
+              </div>
+              <button class="parking-card-delete" id="deleteParkingBtn" title="Eliminar">✕</button>
+            </div>
+            <div class="parking-card-details" id="parkingCardDetails"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TAB: CÀMERA -->
+      <section id="tab-camera" class="tab-content">
+        <div class="camera-wrapper">
+
+          <div class="camera-container" id="cameraContainer">
+            <video id="videoFeed" autoplay playsinline muted></video>
+            <canvas id="photoCanvas" class="hidden"></canvas>
+
+            <div class="camera-overlay">
+              <div class="corner top-left"></div>
+              <div class="corner top-right"></div>
+              <div class="corner bottom-left"></div>
+              <div class="corner bottom-right"></div>
+            </div>
+
+            <div class="flash-overlay" id="flashOverlay"></div>
+
+            <div class="no-camera" id="noCamera">
+              <span>📷</span>
+              <p>Activa la càmera</p>
+              <small>Per fotografiar on has aparcat</small>
+            </div>
+
+            <!-- Preview de la foto feta -->
+            <div class="photo-preview hidden" id="photoPreview">
+              <img id="previewImg" src="" alt="Foto aparcament"/>
+              <div class="preview-actions">
+                <button class="preview-btn confirm" id="confirmPhotoBtn">✓ Guardar</button>
+                <button class="preview-btn discard" id="discardPhotoBtn">✕ Repetir</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="camera-controls">
+            <button class="ctrl-btn secondary" id="switchCameraBtn" title="Canviar càmera">🔄</button>
+            <button class="ctrl-btn primary" id="captureBtn">
+              <div class="capture-ring">
+                <div class="capture-circle"></div>
+              </div>
+            </button>
+            <button class="ctrl-btn secondary" id="galleryHintBtn" title="Veure fotos">🖼️</button>
+          </div>
+
+          <p class="camera-hint">Fes una foto del lloc on has aparcat (planta, número, referència...)</p>
+
+        </div>
+      </section>
+
+      <!-- TAB: HISTORIAL -->
+      <section id="tab-history" class="tab-content">
+        <div class="history-wrapper">
+          <div class="history-header">
+            <h2>Historial</h2>
+            <button class="clear-btn" id="clearHistoryBtn">🗑️ Netejar</button>
+          </div>
+
+          <div class="history-list" id="historyList">
+            <div class="history-empty" id="historyEmpty">
+              <span>🗺️</span>
+              <p>Sense aparcaments guardats</p>
+              <small>Guarda el primer des del mapa!</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BOTTOM NAV -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="map">
+        <span class="tab-icon">🗺️</span>
+        <span>Mapa</span>
+      </button>
+      <button class="tab-btn" data-tab="camera">
+        <span class="tab-icon">📷</span>
+        <span>Foto</span>
+      </button>
+      <button class="tab-btn" data-tab="history">
+        <span class="tab-icon">📋</span>
+        <span>Historial</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- MODAL: detall d'un aparcament de l'historial -->
+  <div class="detail-modal hidden" id="detailModal">
+    <div class="modal-overlay" id="modalOverlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Aparcament</h3>
+        <button class="modal-close" id="closeModalBtn">✕</button>
+      </div>
+      <img id="modalPhoto" src="" alt="Foto del parking" class="hidden"/>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button class="modal-btn navigate" id="modalNavigateBtn">🧭 Navegar</button>
+        <button class="modal-btn delete" id="modalDeleteBtn">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
